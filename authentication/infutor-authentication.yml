@@ -1,0 +1,44 @@
+generated: '2026-07-19'
+method: searched
+source: https://help.infutor.com/docs/authentication-api.md
+docs: https://help.infutor.com/docs/infutor-api.md
+summary:
+  types: [apiKey, http]
+  api_key_in: [query, header]
+  oauth2_flows: []
+  notes: >-
+    InfutorData / LeadiD (part of ActiveProspect) uses account-code + LeadiD-token
+    query-parameter credentials on the LeadiD query APIs, plus an optional HTTP
+    Bearer token in the Authorization header when API Authentication is enabled.
+    The Audit/Intelligence API additionally documents a customer-supplied
+    `authorization: {token}` request header carrying InfutorData-generated tokens.
+schemes:
+  - name: leadidQueryCredentials
+    type: apiKey
+    in: query
+    parameters:
+      - name: lac
+        description: Account Code (UUID) issued by InfutorData / LeadiD.
+        required: true
+      - name: id
+        description: LeadiD token to authenticate/audit (UUID); may be optional when "LeadiD Optional" is enabled.
+        required: false
+    source: https://help.infutor.com/apidocs/endpoint-for-a-lead-audit.md
+    example: https://api.leadid.com/Authenticate?lac={ACCOUNTCODE}&id={LEADIDTOKEN}
+  - name: bearerToken
+    type: http
+    scheme: bearer
+    in: header
+    header: Authorization
+    description: >-
+      Optional Bearer token in the Authorization header, required when API
+      Authentication is enabled on the LeadiD query endpoints (e.g. /SingleQuery).
+    source: https://help.infutor.com/apidocs/endpoint-for-a-lead-audit.md
+  - name: audit_authorization_token
+    type: apiKey
+    in: header
+    header: authorization
+    description: >-
+      The Audit / Intelligence API requires a customer-supplied `authorization`
+      request header carrying the token(s) InfutorData generates for the account.
+    source: https://help.infutor.com/docs/infutor-api.md
