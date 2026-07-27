@@ -1,0 +1,38 @@
+generated: '2026-07-19'
+method: searched
+source: https://help.infutor.com/llms.txt
+docs: https://help.infutor.com/apidocs/endpoint-for-a-lead-audit.md
+summary: >-
+  Cross-cutting request/response semantics for the InfutorData / LeadiD query
+  APIs (part of ActiveProspect). These are real-time GET query endpoints on
+  api.leadid.com; there is no documented idempotency-key, cursor pagination,
+  or webhook contract — the APIs are single-record synchronous lookups, while
+  bulk delivery is handled through file-based Activate/Signal integrations.
+authentication:
+  style: query-parameter credentials (lac account code + id LeadiD token) plus optional HTTP Bearer; Audit API uses an `authorization` header token
+  ref: authentication/infutor-authentication.yml
+request:
+  transport: HTTPS / TLS 1.3
+  methods: [GET]
+  base_hosts:
+    - https://api.leadid.com
+content_negotiation:
+  formats: [json, xml]
+  selector: format query parameter (json | xml); default json
+  field: format
+idempotency:
+  supported: false
+  note: No Idempotency-Key header or idempotent-retry contract is documented; query endpoints are read-only GETs.
+pagination:
+  supported: false
+  note: Query endpoints return a single audit/identity record per request; no cursor/offset pagination is documented.
+tracing:
+  request_id: transid
+  note: Successful audit responses return a `transid` (transaction ID) and `token` for tracking a query.
+versioning:
+  scheme: uri-path
+  note: API reference is published as a "v1-api" reference in the Document360 knowledge base.
+error_envelope:
+  note: Documented responses focus on the 200 success object; a structured error catalog is not published in the public docs.
+rate_limiting:
+  note: No public rate-limit signaling headers are documented.

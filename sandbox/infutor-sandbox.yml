@@ -1,0 +1,29 @@
+generated: '2026-07-19'
+method: searched
+source: https://help.infutor.com/llms.txt
+summary: >-
+  InfutorData / LeadiD (part of ActiveProspect) publishes testing surfaces for
+  its TCPA Guardian and Create/LeadiD implementations rather than a keyed
+  test-vs-live sandbox. No published magic test values are captured here (none
+  are quoted, to avoid fabrication) — these are the documented testing tools.
+test_tools:
+  - name: TCPA Visibility Sandbox
+    docs:
+      - https://help.infutor.com/docs/tcpa-visibility-sandbox.md
+      - https://help.infutor.com/docs/tcpa-visibility-sandbox-1.md
+    description: Sandbox for exercising TCPA Guardian disclosure visibility before going live.
+  - name: Create Implementation Testing (self-test)
+    docs: https://help.infutor.com/docs/create-implementation-testing.md
+    description: >-
+      Campaign implementation self-test that verifies the Jornaya campaign
+      JavaScript is properly implemented on a website or within a call center.
+  - name: Testing Data Source (Activate)
+    docs: https://help.infutor.com/docs/monitoring-file-testing.md
+    description: Test a configured Activate monitoring-file data source before production runs.
+  - name: Testing Activate Signal Integration
+    docs: https://help.infutor.com/docs/testing-activate-signal-integration.md
+    description: Validate an Activate Signal delivery integration end to end.
+notes: >-
+  Test/live separation is account-configuration driven ("API Authentication",
+  "LeadiD Optional" toggles) rather than key-prefix based. No test card numbers,
+  test tokens, or magic identifiers are published in the public knowledge base.
