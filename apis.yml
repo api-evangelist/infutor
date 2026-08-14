@@ -11,17 +11,24 @@ description: >-
   privacy-guardian lookups, documented in the InfutorData help center. Backed by
   Norwest Venture Partners.
 accessModel:
-  pricing: unknown
-  onboarding: self-serve
+  pricing: contact-sales
+  onboarding: sales
   trial: false
   try_now: false
   public: false
-  label: Self-serve signup
-  confidence: medium
+  label: Contact sales
+  confidence: high
   source:
-  - authentication
-  generated: '2026-07-22'
-  method: derived
+  - plans/infutor-plans-pricing.yml
+  - authentication/infutor-authentication.yml
+  generated: '2026-08-13'
+  method: searched
+  note: >-
+    Corrected from a prior derived guess of "self-serve signup". There is no
+    signup, no pricing page and no self-serve key issuance for the LeadiD query
+    APIs — the account code, audit profile key and authentication token are all
+    issued by customersupport@infutor.com. Only the Activate API access token is
+    self-service, and only once an account already exists.
 image: https://infutor.com/wp-content/uploads/2026/04/ID_primary_logo.png
 url: https://raw.githubusercontent.com/api-evangelist/infutor/refs/heads/main/apis.yml
 x-type: company
@@ -32,7 +39,7 @@ x-tier: enriched
 x-tier-reason: portfolio-lead-enriched
 specificationVersion: '0.20'
 created: '2026-07-17'
-modified: '2026-07-19'
+modified: '2026-08-13'
 tags:
 - Company
 - Identity Resolution
@@ -76,6 +83,94 @@ apis:
     url: https://help.infutor.com/apidocs/endpoint-for-a-lead-audit
   - type: Authentication
     url: authentication/infutor-authentication.yml
+  - type: ErrorCatalog
+    url: errors/infutor-error-codes.yml
+  - type: RateLimits
+    url: rate-limits/infutor-rate-limits.yml
+  - type: DataModel
+    url: data-model/infutor-data-model.yml
+- name: InfutorData TCPA Guardian (3rd Party) API
+  description: >-
+    The TCPA Guardian projection of the SingleQuery lead audit: given a LeadiD
+    token minted by the Create campaign script, it returns whether a matching
+    TCPA consent disclosure was present on the original web form, how prominent,
+    contrasted and visible it was, whether the consumer interacted with it, and
+    the verbatim disclosure text that was shown. Its 1st Party sibling
+    (Privacy Guardian) returns a disclosures[] array instead of the visual
+    prominence scores. Same endpoint and credentials as the Intelligence API;
+    which branches appear is governed by the audit profile key (lak) and the
+    products provisioned on the account.
+  humanURL: https://help.infutor.com/docs/tcpa-guardian-3rd-party-api
+  baseURL: https://api.leadid.com
+  tags:
+  - TCPA Compliance
+  - Lead Verification
+  - Consent
+  - Identity
+  properties:
+  - type: Documentation
+    url: https://help.infutor.com/docs/tcpa-guardian-3rd-party-api
+  - type: APIReference
+    url: https://help.infutor.com/apidocs/endpoint-for-a-lead-audit
+  - type: GettingStarted
+    url: https://help.infutor.com/docs/getting-started-with-tcpa-guardian
+  - type: Authentication
+    url: authentication/infutor-authentication.yml
+  - type: Sandbox
+    url: sandbox/infutor-sandbox.yml
+- name: InfutorData Pre-Audit API
+  description: >-
+    Real-time GET query (SinglePreAudit) that lets a publisher or lead seller
+    test a lead against a named advertiser's default audit profile BEFORE
+    selling it, returning the yellow and red flags that advertiser's Jornaya
+    Intelligence and TCPA Guardian settings would raise. Takes the buyer's
+    entity code (lec) alongside the seller's own account code and the LeadiD
+    token.
+  humanURL: https://help.infutor.com/docs/pre-audit-api
+  baseURL: https://api.leadid.com
+  tags:
+  - Lead Verification
+  - TCPA Compliance
+  - Intelligence
+  properties:
+  - type: Documentation
+    url: https://help.infutor.com/docs/pre-audit-api
+  - type: GettingStarted
+    url: https://help.infutor.com/docs/pre-audit-getting-started-guide
+  - type: Authentication
+    url: authentication/infutor-authentication.yml
+  - type: ErrorCatalog
+    url: errors/infutor-error-codes.yml
+- name: InfutorData Activate API
+  description: >-
+    The batch counterpart to the real-time LeadiD queries — a versioned REST
+    surface on myJornaya for driving Activate audience instances: list the
+    Activate instances on an account, retrieve a presigned upload URL and POST a
+    hashed CSV monitoring file into an instance, list recent signal runs, and
+    fetch the download URL for a given run date (or "latest"). Authenticated
+    with a self-service Bearer API access token minted at
+    app.jornaya.com/activate/access-tokens, with a {"Code","Message"} error
+    envelope and HAL-shaped _links on collections.
+  humanURL: https://help.infutor.com/docs/api-endpoint-monitoring-file-send
+  baseURL: https://app.jornaya.com/api/v1
+  tags:
+  - Activate
+  - Audience Activation
+  - Data Enrichment
+  - Identity
+  properties:
+  - type: Documentation
+    url: https://help.infutor.com/docs/api-endpoint-monitoring-file-send
+  - type: APIReference
+    url: https://help.infutor.com/docs/api-endpoint-signal-file-delivery
+  - type: GettingStarted
+    url: https://help.infutor.com/docs/getting-started-with-activate
+  - type: Authentication
+    url: authentication/infutor-authentication.yml
+  - type: ErrorCatalog
+    url: errors/infutor-error-codes.yml
+  - type: Conventions
+    url: conventions/infutor-conventions.yml
 maintainers:
 - FN: Kin Lane
   email: kin@apievangelist.com
@@ -110,8 +205,30 @@ common:
   url: sandbox/infutor-sandbox.yml
 - type: LLMsTxt
   url: llms/infutor-llms.txt
+- type: Login
+  url: https://app.jornaya.com/login
+- type: StatusPage
+  url: https://status.infutor.com
+- type: Lifecycle
+  url: lifecycle/infutor-lifecycle.yml
+- type: ErrorCatalog
+  url: errors/infutor-error-codes.yml
+- type: RateLimits
+  url: rate-limits/infutor-rate-limits.yml
+- type: Plans
+  url: plans/infutor-plans-pricing.yml
+- type: Packages
+  url: packages/infutor-packages.yml
+- type: Components
+  url: components/infutor-components.yml
+- type: DataModel
+  url: data-model/infutor-data-model.yml
+- type: Conformance
+  url: conformance/infutor-conformance.yml
+- type: MCPServer
+  url: mcp/infutor-mcp.yml
 x-enrichment:
-  date: '2026-07-19'
-  status: backfilled
+  date: '2026-08-13'
+  status: enriched
+  artifacts_added: 10
   pass: local-v1
-  note: backfilled from .gitignore signal + verified work evidence
