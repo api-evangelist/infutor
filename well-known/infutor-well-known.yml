@@ -1,0 +1,141 @@
+generated: '2026-08-13'
+method: probed
+source: Live HTTPS probes of every host named in apis.yml plus the docs, app and parent hosts.
+summary: >-
+  No InfutorData host serves any /.well-known/ document. Two of the four hosts
+  answer HTTP 200 on every /.well-known/ path, but both are catch-all shells —
+  infutor.com is a WordPress theme that returns the homepage for any unknown
+  path (verified: /openapi.json and /pricing/ return byte-identical 208,176-byte
+  homepage HTML), and app.jornaya.com is a single-page app that returns its
+  index.html. Neither is a served document. NO WellKnown or SecurityTxt pointer
+  is emitted from this probe.
+hits: 0
+files: []
+probes:
+  - host: infutor.com
+    catch_all_200: true
+    catch_all_evidence: >-
+      https://infutor.com/openapi.json returns 200 with the site homepage
+      (<title>Consumer Insights — Identity, Behavior, Inbound Leads, TCPA
+      Protection</title>), identical in length to https://infutor.com/pricing/.
+    paths:
+      - path: /.well-known/security.txt
+        status: 404
+        document: false
+      - path: /.well-known/openid-configuration
+        status: 200
+        document: false
+        note: HTML homepage shell, not a document.
+      - path: /.well-known/oauth-authorization-server
+        status: 200
+        document: false
+        note: HTML homepage shell, not a document.
+      - path: /.well-known/api-catalog
+        status: 200
+        document: false
+        note: HTML homepage shell, not a document.
+      - path: /.well-known/ai-plugin.json
+        status: 200
+        document: false
+        note: HTML homepage shell, not a document.
+      - path: /.well-known/agent-card.json
+        status: 200
+        document: false
+        note: HTML homepage shell, not an AgentCard.
+      - path: /.well-known/agent.json
+        status: 200
+        document: false
+        note: HTML homepage shell, not an AgentCard.
+      - path: /llms.txt
+        status: 404
+        document: false
+  - host: help.infutor.com
+    catch_all_200: false
+    paths:
+      - path: /.well-known/security.txt
+        status: 404
+        document: false
+      - path: /.well-known/openid-configuration
+        status: 404
+        document: false
+      - path: /.well-known/oauth-authorization-server
+        status: 404
+        document: false
+      - path: /.well-known/api-catalog
+        status: 404
+        document: false
+      - path: /.well-known/ai-plugin.json
+        status: 404
+        document: false
+      - path: /.well-known/agent-card.json
+        status: 404
+        document: false
+      - path: /.well-known/agent.json
+        status: 404
+        document: false
+      - path: /llms.txt
+        status: 200
+        document: true
+        note: >-
+          Real llms.txt (142 lines) — captured separately at
+          llms/infutor-llms.txt. Not a /.well-known/ path, so it does not feed
+          the WellKnown pointer.
+  - host: api.leadid.com
+    catch_all_200: false
+    note: nginx; returns a genuine 404 body on every unknown path, including the site root.
+    paths:
+      - path: /.well-known/security.txt
+        status: 404
+        document: false
+      - path: /.well-known/openid-configuration
+        status: 404
+        document: false
+      - path: /.well-known/oauth-authorization-server
+        status: 404
+        document: false
+      - path: /.well-known/api-catalog
+        status: 404
+        document: false
+      - path: /.well-known/ai-plugin.json
+        status: 404
+        document: false
+      - path: /.well-known/agent-card.json
+        status: 404
+        document: false
+      - path: /.well-known/agent.json
+        status: 404
+        document: false
+      - path: /llms.txt
+        status: 404
+        document: false
+  - host: app.jornaya.com
+    catch_all_200: true
+    catch_all_evidence: >-
+      Angular/SPA index.html returned for /.well-known/agent-card.json,
+      /.well-known/security.txt, /openapi.json, /swagger.json and /llms.txt
+      alike. The API surface underneath does answer honestly:
+      https://app.jornaya.com/api/v1/activate returns 401
+      {"Code":"UnauthorizedQuery","Message":"Missing Authorization Token"}.
+    paths:
+      - path: /.well-known/security.txt
+        status: 200
+        document: false
+      - path: /.well-known/agent-card.json
+        status: 200
+        document: false
+  - host: activeprospect.com
+    catch_all_200: false
+    note: Parent company host, probed for completeness.
+    paths:
+      - path: /.well-known/security.txt
+        status: 404
+        document: false
+      - path: /.well-known/agent-card.json
+        status: 404
+        document: false
+      - path: /.well-known/agent.json
+        status: 404
+        document: false
+      - path: /llms.txt
+        status: 404
+        document: false

@@ -1,38 +1,155 @@
-generated: '2026-07-19'
+generated: '2026-08-13'
 method: searched
-source: https://help.infutor.com/llms.txt
-docs: https://help.infutor.com/apidocs/endpoint-for-a-lead-audit.md
+source: https://help.infutor.com/apidocs/endpoint-for-a-lead-audit.md
+docs: https://help.infutor.com/docs/technical-documentation.md
 summary: >-
-  Cross-cutting request/response semantics for the InfutorData / LeadiD query
-  APIs (part of ActiveProspect). These are real-time GET query endpoints on
-  api.leadid.com; there is no documented idempotency-key, cursor pagination,
-  or webhook contract — the APIs are single-record synchronous lookups, while
-  bulk delivery is handled through file-based Activate/Signal integrations.
+  Cross-cutting request/response semantics for the InfutorData / LeadiD APIs
+  (part of ActiveProspect). Two unrelated conventions live under one brand. The
+  real-time query APIs on api.leadid.com are unversioned synchronous GETs that
+  take credentials and consumer data as query parameters and report ALL failures
+  at HTTP 200 inside the response body — there is no idempotency key, no
+  pagination, no rate-limit header and no error status code. The batch Activate
+  API on app.jornaya.com is a conventional /api/v1/ REST surface with Bearer
+  auth, a {"Code","Message"} error envelope, HAL-shaped _links, and a presigned
+  S3 form POST for file upload.
 authentication:
-  style: query-parameter credentials (lac account code + id LeadiD token) plus optional HTTP Bearer; Audit API uses an `authorization` header token
+  style: >-
+    query-parameter credentials (lac account code + id LeadiD token) plus
+    optional HTTP Bearer on api.leadid.com; required Bearer API access token on
+    app.jornaya.com/api/v1
   ref: authentication/infutor-authentication.yml
+surfaces:
+  - name: LeadiD real-time query API
+    base: https://api.leadid.com
+    versioned: false
+    methods: [GET, POST]
+    operations:
+      - 'GET /Authenticate'
+      - 'GET /SingleQuery'
+      - 'GET /SinglePreAudit'
+    note: >-
+      Docs state "GET or POST"; every published example is a GET with all
+      parameters, including credentials and consumer PII, in the query string.
+  - name: Activate batch API
+    base: https://app.jornaya.com/api/v1
+    versioned: true
+    methods: [GET, POST]
+    operations:
+      - 'GET /activate'
+      - 'GET /activate/{activate_instance_id}/upload'
+      - 'GET /activate/{activate_instance_id}/runs'
+      - 'GET /activate/{activate_instance_id}/runs/{run_date}'
+      - 'POST <presigned S3 URL> (multipart form-data)'
 request:
-  transport: HTTPS / TLS 1.3
-  methods: [GET]
+  transport: HTTPS / TLS 1.2 minimum (TLSv1.3 negotiated in live probe)
+  cipher_suites_published: true
+  methods: [GET, POST]
   base_hosts:
     - https://api.leadid.com
+    - https://app.jornaya.com
+  parameter_style: >-
+    Flat query parameters with terse lowercase three-letter keys — lac (account
+    code), lak (audit profile key), lpc (provider code), lec (entity code), id
+    (LeadiD token), agency, recordid.
+  composite_parameter:
+    field: data
+    encoding: 'pipe-delimited pairs, each label and value separated by a semicolon'
+    example: 'data=email;joe@smith.com|f_name;joe'
+    note: >-
+      Consumer PII for data-integrity scoring is packed into a single
+      custom-encoded query parameter rather than a request body. Callers must
+      URL-encode the delimiters themselves; no escaping rule is published for
+      values that contain a pipe or semicolon.
 content_negotiation:
   formats: [json, xml]
   selector: format query parameter (json | xml); default json
   field: format
+  note: >-
+    Format is selected by query parameter, not by Accept header. The XML
+    projection is documented as a full peer of the JSON one, including for
+    arrays (repeated elements rather than a wrapper).
 idempotency:
   supported: false
-  note: No Idempotency-Key header or idempotent-retry contract is documented; query endpoints are read-only GETs.
+  header: null
+  note: >-
+    No Idempotency-Key header or idempotent-retry contract is documented. The
+    read paths are GETs and therefore naturally idempotent, but they are also
+    metered — every repeat query counts against the LeadiD token's 100-lookup
+    cap, so a naive retry loop consumes the resource it is reading. The one
+    mutating path (Activate monitoring-file POST) has no replay protection.
 pagination:
   supported: false
-  note: Query endpoints return a single audit/identity record per request; no cursor/offset pagination is documented.
+  note: >-
+    Query endpoints return a single audit record per request. The Activate runs
+    collection returns an unpaginated JSON array with no cursor, limit or total.
+expansion:
+  supported: false
+  mechanism: account provisioning
+  note: >-
+    Which product branches appear under audit.market.* is determined by the
+    products provisioned on the account and by the audit profile key (lak) —
+    not by a request-time field/expand parameter. The same request against two
+    accounts returns different shapes, and every market.* branch must be
+    treated as optional. See data-model/infutor-data-model.yml.
+metadata:
+  supported: true
+  field: recordid
+  note: >-
+    A single caller-supplied passthrough field (the lead management system's own
+    record id) is echoed in the response. There is no general metadata map.
 tracing:
   request_id: transid
-  note: Successful audit responses return a `transid` (transaction ID) and `token` for tracking a query.
+  response_field: transid
+  note: >-
+    Successful audit responses return a `transid` (transaction ID) and the
+    audited `token`. Support explicitly asks for the LeadiD token and the API
+    call string when troubleshooting.
+  request_header: null
 versioning:
   scheme: uri-path
-  note: API reference is published as a "v1-api" reference in the Document360 knowledge base.
+  current: v1
+  note: >-
+    Help-center articles are namespaced /v1/docs/ and the Activate API carries
+    /api/v1/, but the LeadiD query endpoints themselves are unversioned.
+  ref: lifecycle/infutor-lifecycle.yml
 error_envelope:
-  note: Documented responses focus on the 200 success object; a structured error catalog is not published in the public docs.
+  style: in-band-at-200
+  primary:
+    fields: [audit.authentic, audit.reason]
+    http_status: 200
+    note: >-
+      The defining hazard of this API: expired, query-capped, opted-out and
+      forged tokens all return HTTP 200. Branch on audit.authentic before
+      anything else.
+  secondary:
+    surface: https://app.jornaya.com/api/v1
+    fields: [Code, Message]
+    http_status: 'real (401 observed)'
+  ref: errors/infutor-error-codes.yml
 rate_limiting:
-  note: No public rate-limit signaling headers are documented.
+  headers_documented: false
+  note: >-
+    No X-RateLimit-*, RateLimit-* or Retry-After header, and no 429. The only
+    published limit is a 100-lookup cap per LeadiD token, signalled in the body.
+  ref: rate-limits/infutor-rate-limits.yml
+hypermedia:
+  style: HAL-like
+  note: >-
+    The Activate runs collection embeds "_links": {"self": {"href": …}} per
+    entry, without declaring a HAL media type.
+  source: https://help.infutor.com/docs/api-endpoint-signal-file-delivery.md
+events:
+  supported: false
+  note: >-
+    No webhooks, no event stream, no AsyncAPI. Bulk results are delivered as
+    files (SFTP, Amazon S3, Box, Salesforce, Marketo, Velocify, email
+    attachment) or pulled via the Activate runs endpoint. The "callback
+    function" in the Create docs is a browser JavaScript hook, not an HTTP
+    callback.
+async_processing:
+  present: true
+  note: >-
+    An Activate monitoring-file upload returns an empty HTTP 200 and then
+    validates asynchronously (~5 minutes). Validation results are NOT available
+    over the API — they are downloaded from the myJornaya UI. There is no job
+    id, no status endpoint and no completion callback.

@@ -1,0 +1,124 @@
+generated: '2026-08-13'
+method: searched
+source: https://help.infutor.com/docs/authentication-api.md
+docs:
+  - https://help.infutor.com/docs/authentication-api.md
+  - https://help.infutor.com/docs/tcpa-guardian-3rd-party-api.md
+  - https://infutor.com/compliance/
+  - https://infutor.com/privacy-center/
+summary: >-
+  InfutorData asserts no API-level industry standard. It publishes no OpenAPI,
+  no OAuth/OIDC, no RFC 9457 problem details, no cursor pagination and no
+  idempotency contract. What it does publish precisely is a transport-security
+  posture — an explicitly enumerated TLS 1.2 cipher-suite list, repeated
+  verbatim across every API article — and a regulatory posture built around US
+  telemarketing and privacy law (TCPA, CCPA/CPRA), which is the product itself
+  rather than a claim about the API. No third-party certification (SOC 2, ISO
+  27001, PCI DSS, HIPAA, FedRAMP) is named anywhere on the public site, and
+  there is no trust center.
+standards:
+  - id: tls
+    name: TLS 1.2
+    conforms: true
+    evidence: >-
+      "Jornaya supports the usage and configuration of TLS 1.2" plus an
+      explicitly enumerated list of 17 supported cipher suites (ECDHE-ECDSA and
+      ECDHE-RSA AES128/AES256 GCM and CBC, plus static AES128/AES256 suites),
+      published in the Authentication API, TCPA Guardian (3rd Party) API,
+      1st Party Privacy Guardian API and Pre-Audit API articles.
+    source: https://help.infutor.com/docs/authentication-api.md
+    note: >-
+      Live probe of infutor.com negotiated TLSv1.3; see
+      security/infutor-domain-security.yml. The docs describe the API host
+      minimum, not the marketing-site maximum.
+  - id: oauth2
+    name: OAuth 2.0
+    conforms: false
+    evidence: >-
+      No authorization server, no /.well-known/oauth-authorization-server (404
+      on api.leadid.com and help.infutor.com), no scopes, no token endpoint.
+      Credentials are static: a query-parameter account code plus, where
+      enabled, an opaque Bearer token issued by support.
+  - id: oidc
+    name: OpenID Connect
+    conforms: false
+    evidence: '/.well-known/openid-configuration returns 404 on api.leadid.com and help.infutor.com.'
+  - id: rfc9457
+    name: RFC 9457 Problem Details for HTTP APIs
+    conforms: false
+    evidence: >-
+      Failures are returned at HTTP 200 inside a proprietary audit envelope
+      (audit.authentic / audit.reason). No application/problem+json anywhere.
+      See errors/infutor-error-codes.yml.
+  - id: rfc8594
+    name: RFC 8594 Sunset header
+    conforms: false
+    evidence: No Sunset or Deprecation header support is documented.
+  - id: pagination
+    name: Paginated collections
+    conforms: false
+    evidence: >-
+      The query APIs are single-record synchronous lookups. The Activate runs
+      collection returns an unpaginated array.
+  - id: idempotency
+    name: Idempotency keys
+    conforms: false
+    evidence: >-
+      No Idempotency-Key header or idempotent-retry contract. The read paths are
+      GETs and therefore naturally idempotent, but the mutating path (Activate
+      monitoring-file POST) has no replay protection.
+  - id: hal
+    name: HAL-style _links hypermedia
+    conforms: partial
+    evidence: >-
+      The Activate runs collection embeds HAL-shaped navigation —
+      each entry carries "_links": {"self": {"href": "..."}} — though no HAL
+      media type is declared.
+    source: https://help.infutor.com/docs/api-endpoint-signal-file-delivery.md
+  - id: openapi
+    name: OpenAPI
+    conforms: false
+    evidence: >-
+      No published spec. The API reference is a Document360 API-docs workspace
+      (apiDefinitionId e6cce534-f9a3-4320-bd1e-19a8f6ba27c9, workspace title
+      "Verisk Marketing Solutions (VMS) Public API") rendered to HTML/markdown;
+      the underlying definition is not downloadable. Probed
+      /openapi.json, /openapi.yaml, /swagger.json, /v1/openapi.json, /api-docs
+      and /docs on api.leadid.com (all 404), on help.infutor.com (404), and on
+      app.jornaya.com (SPA shell).
+  - id: asyncapi
+    name: AsyncAPI
+    conforms: false
+    evidence: >-
+      No event or webhook surface. Bulk delivery is file-based (SFTP, S3, Box,
+      Salesforce, Marketo, Velocify, email attachment), and the client-side
+      "callback function" is a browser JavaScript hook, not an HTTP callback.
+regulatory:
+  - id: tcpa
+    name: Telephone Consumer Protection Act
+    conforms: n/a
+    posture: product
+    evidence: >-
+      TCPA Guardian is the product — it verifies and replays consumer TCPA
+      consent captured on a lead form. The provider makes no claim of being
+      itself TCPA-certified; it supplies evidence its customers use.
+    source: https://help.infutor.com/docs/tcpa-guardian.md
+  - id: ccpa
+    name: California Consumer Privacy Act / CPRA
+    conforms: partial
+    posture: honored-in-api
+    evidence: >-
+      A consumer's CCPA right-to-opt-out is enforced inside the API response
+      surface: audit.reason = 3 ("Opted Out") suppresses the record. The
+      compliance page states the platform is "designed for CCPA adherence" and
+      the site publishes a Privacy Center and a CCPA FAQ.
+    source: https://infutor.com/california-consumer-privacy-act-frequently-asked-questions/
+certifications:
+  published: false
+  named: []
+  note: >-
+    No SOC 2, ISO 27001, PCI DSS, HIPAA or FedRAMP attestation is named on
+    infutor.com/compliance/ or anywhere else on the public site, and no trust
+    center exists (trust.infutor.com does not resolve). The compliance page
+    offers only an unaudited assurance — "We've never lost a partner over data
+    concerns or audits." No Compliance or TrustCenter pointer is emitted.

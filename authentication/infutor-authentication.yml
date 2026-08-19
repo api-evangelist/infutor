@@ -1,4 +1,4 @@
-generated: '2026-07-19'
+generated: '2026-08-13'
 method: searched
 source: https://help.infutor.com/docs/authentication-api.md
 docs: https://help.infutor.com/docs/infutor-api.md
@@ -12,6 +12,14 @@ summary:
     Bearer token in the Authorization header when API Authentication is enabled.
     The Audit/Intelligence API additionally documents a customer-supplied
     `authorization: {token}` request header carrying InfutorData-generated tokens.
+    The separate batch Activate API on app.jornaya.com uses a self-service
+    Bearer API access token minted in myJornaya, and its presigned upload step
+    uses AWS SigV4 form fields rather than an InfutorData credential.
+  provisioning: >-
+    Credentials for the LeadiD query APIs are issued by InfutorData support, not
+    self-service — the account code, audit profile key and (where enabled) the
+    authentication token all come from customersupport@infutor.com. Only the
+    Activate API access token can be created by the customer.
 schemes:
   - name: leadidQueryCredentials
     type: apiKey
@@ -42,3 +50,55 @@ schemes:
       The Audit / Intelligence API requires a customer-supplied `authorization`
       request header carrying the token(s) InfutorData generates for the account.
     source: https://help.infutor.com/docs/infutor-api.md
+  - name: activateAccessToken
+    type: http
+    scheme: bearer
+    in: header
+    header: Authorization
+    applies_to:
+      - 'GET https://app.jornaya.com/api/v1/activate'
+      - 'GET https://app.jornaya.com/api/v1/activate/{activate_instance_id}/upload'
+      - 'GET https://app.jornaya.com/api/v1/activate/{activate_instance_id}/runs'
+      - 'GET https://app.jornaya.com/api/v1/activate/{activate_instance_id}/runs/{run_date}'
+    description: >-
+      API Access Token for the batch Activate API, minted by the customer in
+      myJornaya at https://app.jornaya.com/activate/access-tokens ("Add API
+      Token") and sent as `Authorization: Bearer <token>`. Deleting a token
+      immediately breaks any process using it; there is no rotation window,
+      grace period or expiry documented.
+    self_service: true
+    management_url: https://app.jornaya.com/activate/access-tokens
+    source: https://help.infutor.com/docs/api-endpoint-monitoring-file-send.md
+    verification:
+      method: probed
+      request: 'GET https://app.jornaya.com/api/v1/activate (no Authorization header)'
+      http_status: 401
+      body: '{"Code":"UnauthorizedQuery","Message":"Missing Authorization Token"}'
+  - name: activateUploadSignature
+    type: aws-sigv4-presigned-post
+    in: body
+    description: >-
+      The monitoring-file upload is a presigned S3 form POST. The GET
+      /upload call returns the URL plus the form-data fields the client must
+      replay: key, x-amz-algorithm, x-amz-credential, x-amz-date,
+      x-amz-security-token, policy and x-amz-signature. These are short-lived
+      AWS credentials scoped to one upload, not an InfutorData API credential.
+    source: https://help.infutor.com/docs/api-endpoint-monitoring-file-send.md
+transport_security:
+  tls_minimum: TLS 1.2
+  cipher_suites_published: true
+  source: https://help.infutor.com/docs/authentication-api.md
+  note: >-
+    17 supported cipher suites are enumerated verbatim in the API articles, with
+    a commitment to notify customers in advance of any revision.
+discovery_probes:
+  note: >-
+    No OAuth 2.0 or OpenID Connect metadata is served on any host; there is no
+    scope surface, so no scopes/ artifact is emitted.
+  probes:
+    - url: https://api.leadid.com/.well-known/openid-configuration
+      status: 404
+    - url: https://api.leadid.com/.well-known/oauth-authorization-server
+      status: 404
+    - url: https://help.infutor.com/.well-known/oauth-authorization-server
+      status: 404

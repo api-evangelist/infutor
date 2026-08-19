@@ -1,0 +1,261 @@
+generated: '2026-08-13'
+method: derived
+source: https://help.infutor.com/apidocs/endpoint-for-a-lead-audit.md
+docs:
+  - https://help.infutor.com/docs/intelligence-response-glossary.md
+  - https://help.infutor.com/docs/authentication-api.md
+  - https://help.infutor.com/docs/advertiser-lead-velocity-plus.md
+  - https://help.infutor.com/docs/api-endpoint-signal-file-delivery.md
+summary: >-
+  Derived from the published response examples and parameter tables rather than
+  from an OpenAPI document — InfutorData ships no spec. The InfutorData data
+  model has one root entity, the LeadiD token, which is minted client-side by
+  the campaign script when a consumer submits a lead form. Every real-time
+  product is a projection hung off that token: the audit envelope carries
+  authenticity, data-integrity, velocity and duplication verdicts inline, and
+  nests per-product raw responses under market.* — TCPA Guardian under
+  market.leadid.tcpa / market.leadid.tcpafirst, and the purchased consumer-data
+  products under market.ConsumerData.*. A second, unrelated entity graph covers
+  the batch Activate side: an Activate instance owns runs, each run producing a
+  downloadable signal file.
+notes: >-
+  Field names are transcribed verbatim from the provider's own examples. Value
+  semantics for the *_rule fields (1 = green, 2 = yellow, 3 = red flag against
+  the configured audit profile) follow the Intelligence response glossary.
+entities:
+  - name: LeadiDToken
+    id_field: token
+    id_format: 36-character UUID
+    description: >-
+      The root identifier. Minted by the campaign script when the consumer
+      submits the form, carried in the leadid_token hidden input, and passed
+      back as the `id` query parameter on every audit. TTL 1 year, 100 lookups.
+    lifecycle_ref: lifecycle/infutor-lifecycle.yml
+  - name: AuthenticateResponse
+    root_field: authenticate
+    description: Minimal authenticity verdict returned by GET /Authenticate.
+    fields:
+      - name: authentic
+        type: integer
+        values: '0 = inauthentic, 1 = authentic'
+      - name: reason
+        type: integer
+        values: '1 expired | 2 query limit | 3 opted out | 4 invalid — present only when authentic = 0'
+      - name: token
+        type: string
+        description: The LeadiD token echoed back.
+  - name: Audit
+    root_field: audit
+    description: >-
+      The full lead-audit object returned by GET /SingleQuery and
+      GET /SinglePreAudit. A wide flat record of verdicts plus a nested
+      per-product `market` branch.
+    field_groups:
+      - group: authenticity
+        fields: [authentic, reason, reg_rule, result, token]
+      - group: data_integrity
+        fields:
+          - data_integrity
+          - data_integrity_rule
+          - data_integrity_passed
+          - data_integrity_failed
+          - data_integrity_default
+          - fields
+        note: >-
+          `fields` is a nested object keyed by field data label
+          (f_name, l_name, address1, city, state, zip, phone1, email),
+          each carrying its own match verdict.
+      - group: device_velocity
+        fields:
+          - device_five_minutes
+          - device_hour
+          - device_twelve_hours
+          - device_day
+          - device_week
+        note: Each has a paired *_rule sibling.
+      - group: ip_velocity
+        fields: [ip_five_minutes, ip_hour, ip_twelve_hours, ip_day, ip_week]
+      - group: lead_velocity
+        fields: [lead_five_minutes, lead_hour, lead_twelve_hours, lead_day, lead_week]
+      - group: consumer_velocity
+        fields:
+          - consumer_five_minutes
+          - consumer_hour
+          - consumer_twelve_hours
+          - consumer_day
+          - consumer_week
+          - consumer_dupe_check
+      - group: duplication
+        fields: [lead_dupe, lead_dupe_check, lead_dupe_time, lead_dupe_rule, lead_dupe_check_rule]
+      - group: timing
+        fields: [lead_age, age, age_rule, lead_duration, duration, duration_rule]
+      - group: provenance
+        fields: [entity_value, entity_rule, total_entities, total_hops, url_value, url_rule, call_center]
+  - name: TcpaGuardianResult
+    path: audit.market.leadid.tcpa
+    variant_path: audit.market.leadid.tcpafirst
+    description: >-
+      TCPA Guardian verdict. `tcpa` is the 3rd-party-lead product; `tcpafirst`
+      is 1st Party Privacy Guardian, which returns a disclosures[] array instead
+      of the visual prominence/contrast/visibility scores.
+    fields:
+      - name: disclosure
+        description: Whether a matching TCPA disclosure was found on the form.
+      - name: prominence
+      - name: contrast
+      - name: visibility
+      - name: capture
+      - name: stored
+      - name: result
+      - name: raw_response.disclosures[]
+        description: 'Per-disclosure records: disclosure_id, label (the verbatim consent text), interaction.'
+  - name: IDScores
+    path: audit.market.ConsumerData.IDScores.raw_response.Detail.IDScores
+    description: Identity Scoring product — 0/100 validity and linkage scores plus summary verdicts.
+    fields:
+      - ValidAddress
+      - ValidPhone
+      - ValidEmail
+      - ValidName
+      - ValidZip
+      - Deceased
+      - NameToPhone
+      - NameToEmail
+      - NameToAddress
+      - AddressToPhone
+      - AddressToEmail
+      - PhoneToEmail
+      - ZipToPhone
+      - PhoneConfidenceScore
+      - AddressConfidenceScore
+      - ValidCount
+      - LinkageCount
+      - RiskFlagCount
+      - ValidationSummary
+      - LinkageSummary
+      - RiskFlagSummary
+      - IDVerifyScore
+  - name: IDCompletion
+    path: audit.market.ConsumerData.IDCompletion.raw_response.output[].results[].completion
+    description: >-
+      Identity Completion product — resolves fractional identity markers into a
+      full consumer profile.
+    fields:
+      - name: names[]
+        fields: [firstName, lastName, middleName, suffix, busName]
+      - name: addresses[]
+        fields:
+          - houseNumber
+          - predir
+          - streetName
+          - streetType
+          - postdir
+          - aptType
+          - city
+          - st
+          - zip
+          - zip4
+          - dpc
+          - crte
+          - cnty
+          - z4type
+          - dpv
+          - deliverable
+          - lastSeen
+      - name: emails[]
+        fields: [email, suppressionCode, urlSources, lastSeen, matchLevel]
+  - name: ConsumerAttributes
+    path: audit.market.ConsumerData.ConsumerAttributes.raw_response.output[].results[]
+    description: >-
+      Attributes product — demographic, household and lifestyle enrichment,
+      grouped by attribute family (coreDemographics and others), returned with a
+      matchLevel.
+    fields:
+      - matchLevel
+      - 'attributes.coreDemographics.* (AGE, AGE_RANGE_COMBINED, GENDER, CHILD, CHILDNBRCD, HOMEOWNERCD, LANGUAGECD, EHI_V2, ETHNICITYCD, …)'
+  - name: LeadVelocityPlus
+    path: audit.market.leadidlabs.leadfrequencyplus
+    description: >-
+      Advertiser Lead Velocity Plus — how many distinct brands audited this lead
+      before you, and when. Supplemental to Intelligence; requires a
+      subscription.
+    fields:
+      - leadplusFiveMinutes
+      - leadplusHour
+      - leadplusTwelveHours
+      - leadplusDay
+      - leadplusWeek
+      - leadplusTimeFirst
+      - leadplusTimeLast
+      - result
+    sentinel_values: ['blocked (suppressed by the Creator campaign)', 'notavailable']
+  - name: Transaction
+    id_field: transid
+    id_format: UUID
+    description: >-
+      Per-query transaction identifier returned alongside every audit; the
+      correlation id support asks for.
+  - name: ActivateInstance
+    id_field: activate_instance_id
+    id_format: UUID
+    description: >-
+      A configured Activate audience/monitoring instance. Owns at most one data
+      source; requesting an upload URL fails while a source integration is
+      attached.
+  - name: ActivateRun
+    id_field: date
+    id_format: YYYY-MM-DD (or the literal "latest")
+    description: >-
+      One execution of an Activate instance, producing a downloadable signal
+      file (a zip of three CSVs). Carries a HAL-shaped _links.self.href.
+  - name: MonitoringFile
+    description: >-
+      The hashed .csv input a customer POSTs to an Activate instance via a
+      presigned S3 form upload.
+relationships:
+  - from: Audit
+    to: LeadiDToken
+    type: belongs_to
+    via: audit.token
+  - from: AuthenticateResponse
+    to: LeadiDToken
+    type: belongs_to
+    via: authenticate.token
+  - from: Audit
+    to: Transaction
+    type: has_one
+    via: transid
+  - from: Audit
+    to: TcpaGuardianResult
+    type: has_one
+    via: audit.market.leadid.tcpa
+  - from: Audit
+    to: IDScores
+    type: has_one
+    via: audit.market.ConsumerData.IDScores
+  - from: Audit
+    to: IDCompletion
+    type: has_one
+    via: audit.market.ConsumerData.IDCompletion
+  - from: Audit
+    to: ConsumerAttributes
+    type: has_one
+    via: audit.market.ConsumerData.ConsumerAttributes
+  - from: Audit
+    to: LeadVelocityPlus
+    type: has_one
+    via: audit.market.leadidlabs.leadfrequencyplus
+  - from: ActivateInstance
+    to: ActivateRun
+    type: has_many
+    via: /api/v1/activate/{activate_instance_id}/runs
+  - from: ActivateInstance
+    to: MonitoringFile
+    type: has_one
+    via: /api/v1/activate/{activate_instance_id}/upload
+composition: >-
+  Which of the market.* branches appear in a given response is a function of the
+  products provisioned on the account and the audit profile key (lak) used — the
+  provider documents eleven distinct example payloads on the lead-audit
+  reference for exactly this reason. Consumers must treat every market.* branch
+  as optional.

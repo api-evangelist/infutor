@@ -1,0 +1,137 @@
+generated: '2026-08-13'
+method: searched
+source: https://help.infutor.com/docs/authentication-api.md
+docs:
+  - https://help.infutor.com/docs/authentication-api.md
+  - https://help.infutor.com/docs/intelligence-api.md
+  - https://help.infutor.com/apidocs/endpoint-for-a-lead-audit.md
+  - https://help.infutor.com/docs/api-endpoint-monitoring-file-send.md
+format: proprietary
+summary: >-
+  The LeadiD query APIs do not use HTTP status codes to report failure. Every
+  documented failure of a lead audit or token authentication returns HTTP 200
+  with a JSON (or XML) body in which audit.authentic is 0 and audit.reason
+  carries a numeric code 1–4. There is no RFC 9457 problem+json, no error
+  envelope with a type/title/detail, and no 4xx catalogue in the public
+  reference — the API reference documents only the 200 response. The separate
+  Activate API on app.jornaya.com does use HTTP status codes and a distinct
+  {"Code","Message"} envelope, observed live on an unauthenticated probe.
+envelopes:
+  - name: leadid_audit_envelope
+    applies_to:
+      - 'GET https://api.leadid.com/Authenticate'
+      - 'GET https://api.leadid.com/SingleQuery'
+      - 'GET https://api.leadid.com/SinglePreAudit'
+    http_status: 200
+    shape:
+      audit.authentic: '0 = inauthentic, 1 = authentic'
+      audit.reason: 'numeric failure code, present only when authentic = 0'
+      audit.result: overall audit rule result
+      audit.token: the LeadiD token that was queried
+      transid: transaction id for the query, usable for support correlation
+    example: |
+      {
+        "audit": {
+          "authentic": 0,
+          "reason": 1,
+          "reg_rule": 3,
+          "result": 3,
+          "token": "58990313-03FB-43B8-AD0B-08CEF791D49B"
+        },
+        "transid": "A26CE6E3-F92B-4528-9A7E-0696450E6B8F"
+      }
+    source: https://help.infutor.com/apidocs/endpoint-for-a-lead-audit.md
+  - name: activate_error_envelope
+    applies_to:
+      - 'GET https://app.jornaya.com/api/v1/activate'
+      - 'GET https://app.jornaya.com/api/v1/activate/{activate_instance_id}/upload'
+      - 'GET https://app.jornaya.com/api/v1/activate/{activate_instance_id}/runs'
+    shape:
+      Code: machine-readable error code (PascalCase)
+      Message: human-readable message
+    method: probed
+    example: '{"Code":"UnauthorizedQuery","Message":"Missing Authorization Token"}'
+    source: 'Live unauthenticated GET https://app.jornaya.com/api/v1/activate -> HTTP 401'
+error_codes:
+  - code: 1
+    field: audit.reason
+    http_status: 200
+    title: Token Expired
+    meaning: >-
+      The LeadiD token is no longer valid because it was created more than one
+      year ago, or it was not found.
+    remediation: >-
+      Re-capture consent with a fresh LeadiD token. Tokens cannot be renewed;
+      audit a lead within one year of capture.
+    source: https://help.infutor.com/docs/authentication-api.md
+  - code: 2
+    field: audit.reason
+    http_status: 200
+    title: Query Limit Reached
+    meaning: >-
+      The token has been queried more than 100 times, reaching the maximum
+      number of lookups allowed.
+    remediation: >-
+      Cache the audit result rather than re-querying. See
+      rate-limits/infutor-rate-limits.yml.
+    source: https://help.infutor.com/docs/authentication-api.md
+  - code: 3
+    field: audit.reason
+    http_status: 200
+    title: Opted Out
+    meaning: >-
+      The token is associated with a consumer who has exercised their CCPA right
+      to opt out.
+    remediation: >-
+      Do not process the lead. This is a regulatory suppression, not a transient
+      failure — do not retry.
+    source: https://help.infutor.com/docs/authentication-api.md
+  - code: 4
+    field: audit.reason
+    http_status: 200
+    title: Invalid Token
+    meaning: The token provided is not one InfutorData generated.
+    remediation: >-
+      Verify the campaign script is implemented on the page AFTER form
+      submission and that the token is being read from the leadid_token hidden
+      field rather than constructed.
+    source: https://help.infutor.com/docs/authentication-api.md
+  - code: UnauthorizedQuery
+    field: Code
+    http_status: 401
+    title: Missing Authorization Token
+    meaning: >-
+      The Activate API request carried no Authorization: Bearer header, or the
+      API access token was absent.
+    remediation: >-
+      Mint an API access token at https://app.jornaya.com/activate/access-tokens
+      and send it as Authorization: Bearer <token>.
+    method: probed
+    source: 'GET https://app.jornaya.com/api/v1/activate'
+  - code: 'Activate instance already has source'
+    field: message
+    http_status: null
+    title: Activate instance already has source
+    meaning: >-
+      The upload URL cannot be retrieved because a data-source integration is
+      already associated with the Activate instance. Integrations toggled "off"
+      still trigger this.
+    remediation: >-
+      Remove the data-source integration from the Instance Configuration page
+      before requesting an upload URL.
+    source: https://help.infutor.com/docs/api-endpoint-monitoring-file-send.md
+gaps:
+  - >-
+    No 4xx/5xx catalogue is published for api.leadid.com. Malformed parameters,
+    a bad account code, an unknown audit profile key and an unauthorised
+    Bearer token all have undocumented behaviour.
+  - >-
+    Failure at HTTP 200 is the defining hazard of this API for an agent: a
+    client that branches on status code alone will treat an expired,
+    query-capped, opted-out or forged token as a successful audit. Branch on
+    audit.authentic, then on audit.reason.
+  - >-
+    Activate monitoring-file upload errors are not returned in the API response
+    at all — a successful POST returns an empty 200 body and validation runs
+    asynchronously (~5 minutes), with results downloadable only from the
+    myJornaya UI.

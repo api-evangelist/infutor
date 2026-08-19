@@ -1,0 +1,150 @@
+generated: '2026-08-13'
+method: derived
+status: candidate
+source: >-
+  Derived from the documented InfutorData / LeadiD endpoints in the help center
+  (https://help.infutor.com/apidocs/endpoint-for-a-lead-audit.md,
+  https://help.infutor.com/docs/authentication-api.md,
+  https://help.infutor.com/docs/pre-audit-api.md,
+  https://help.infutor.com/docs/api-endpoint-monitoring-file-send.md,
+  https://help.infutor.com/docs/api-endpoint-signal-file-delivery.md).
+summary: >-
+  InfutorData publishes no MCP server. Searched the docs and the help-center
+  llms.txt index (no MCP mention), probed https://mcp.infutor.com/mcp (host does
+  not resolve — NXDOMAIN), https://api.leadid.com/mcp (404) and
+  https://help.infutor.com/mcp (404 JSON). The tools below are a CANDIDATE
+  mapping API Evangelist derived from the provider's own documented endpoints —
+  nobody ships this server today.
+deployment:
+  mode: none
+  endpoint: null
+  install: null
+  package: null
+  auth: api-key
+  verified: probed
+  note: >-
+    auth reflects what an MCP server WOULD need — the LeadiD query APIs take an
+    account code (lac) plus a LeadiD token (id) as query parameters and an
+    optional Bearer token; the Activate API takes a Bearer API access token.
+server:
+  name: infutor
+  transport: null
+  url: null
+probes:
+  - url: https://mcp.infutor.com/mcp
+    result: NXDOMAIN
+    note: Host does not resolve; no MCP server on the conventional subdomain.
+  - url: https://api.leadid.com/mcp
+    status: 404
+  - url: https://help.infutor.com/mcp
+    status: 404
+  - url: https://help.infutor.com/llms.txt
+    status: 200
+    note: 142-line docs index; contains no MCP server, tool list or endpoint.
+tools:
+  - name: authenticate_leadid_token
+    description: >-
+      Confirm whether a LeadiD token is authentic and, when it is not, why
+      (expired, query limit reached, opted out, invalid).
+    source_operation: 'GET https://api.leadid.com/Authenticate'
+    docs: https://help.infutor.com/docs/authentication-api.md
+    inputs:
+      - name: lac
+        required: true
+        description: Jornaya/InfutorData account code (UUID).
+      - name: id
+        required: true
+        description: 36-character LeadiD token.
+  - name: audit_lead
+    description: >-
+      Run a single real-time lead audit (SingleQuery) returning authenticity,
+      data-integrity checks, device/IP/lead velocity metrics, TCPA Guardian
+      disclosure results, identity scores and consumer attributes.
+    source_operation: 'GET https://api.leadid.com/SingleQuery'
+    docs: https://help.infutor.com/apidocs/endpoint-for-a-lead-audit.md
+    inputs:
+      - name: lac
+        required: true
+        description: Account code (UUID).
+      - name: id
+        required: false
+        description: LeadiD token — required unless "LeadiD Optional" is enabled on the account.
+      - name: lak
+        required: false
+        description: Audit profile key (UUID).
+      - name: lpc
+        required: false
+        description: Provider code (UUID).
+      - name: lec
+        required: false
+        description: Entity code of the party the lead will be sold to.
+      - name: data
+        required: false
+        description: Pipe-delimited consumer data with semicolon-delimited field labels, for data-integrity scoring.
+      - name: recordid
+        required: false
+        description: Caller's own lead-record identifier, echoed back.
+      - name: agency
+        required: false
+        description: Agency/AOR account code, when querying on behalf of a client.
+      - name: format
+        required: false
+        description: json (default) or xml.
+  - name: pre_audit_lead
+    description: >-
+      Query an advertiser's default audit profile before selling a lead, to see
+      whether it would draw yellow or red flags on Intelligence and TCPA
+      Guardian data points.
+    source_operation: 'GET https://api.leadid.com/SinglePreAudit'
+    docs: https://help.infutor.com/docs/pre-audit-api.md
+    inputs:
+      - name: lac
+        required: true
+      - name: id
+        required: true
+      - name: lec
+        required: true
+        description: Entity code of the party you plan to sell the lead to.
+      - name: lpc
+        required: false
+      - name: data
+        required: false
+      - name: format
+        required: false
+  - name: list_activate_instances
+    description: List the Activate instances available to the authenticated account.
+    source_operation: 'GET https://app.jornaya.com/api/v1/activate'
+    docs: https://help.infutor.com/docs/api-endpoint-monitoring-file-send.md
+    inputs: []
+  - name: get_activate_upload_url
+    description: >-
+      Retrieve the presigned upload URL and form fields needed to POST a
+      monitoring file into an Activate instance.
+    source_operation: 'GET https://app.jornaya.com/api/v1/activate/{activate_instance_id}/upload'
+    docs: https://help.infutor.com/docs/api-endpoint-monitoring-file-send.md
+    inputs:
+      - name: activate_instance_id
+        required: true
+  - name: list_activate_runs
+    description: List recent Activate signal runs for an instance.
+    source_operation: 'GET https://app.jornaya.com/api/v1/activate/{activate_instance_id}/runs'
+    docs: https://help.infutor.com/docs/api-endpoint-signal-file-delivery.md
+    inputs:
+      - name: activate_instance_id
+        required: true
+  - name: get_activate_run
+    description: >-
+      Retrieve the download URL for one Activate signal run, by run date or the
+      literal value "latest".
+    source_operation: 'GET https://app.jornaya.com/api/v1/activate/{activate_instance_id}/runs/{run_date}'
+    docs: https://help.infutor.com/docs/api-endpoint-signal-file-delivery.md
+    inputs:
+      - name: activate_instance_id
+        required: true
+      - name: run_date
+        required: true
+        description: YYYY-MM-DD, or "latest".
+caveats: >-
+  Input schemas above are transcribed from the provider's published parameter
+  tables, not from an OpenAPI document — InfutorData publishes no machine-readable
+  spec, so no tool crosswalk is emitted (there are no operationIds to bind to).

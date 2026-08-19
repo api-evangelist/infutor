@@ -1,0 +1,42 @@
+generated: '2026-08-13'
+method: searched
+source: https://infutor.com/
+summary: >-
+  InfutorData publishes no pricing. There is no pricing page, no plan tier, no
+  published rate card and no self-serve checkout anywhere on infutor.com or in
+  the help center — every product path terminates at "Contact Us" or a
+  sales-qualified demo request, and API access is provisioned by the support
+  team (an account code, an audit profile key and, where enabled, an
+  authentication token are all issued by InfutorData staff).
+plan_count: 0
+plans: []
+model: enterprise-contact-sales
+self_serve: false
+free_tier: false
+trial: false
+evidence:
+  - url: https://infutor.com/pricing/
+    status: 200
+    finding: >-
+      Not a pricing page. The WordPress theme returns the site homepage for any
+      unknown path — this response is byte-identical (208,176 bytes, title
+      "Consumer Insights — Identity, Behavior, Inbound Leads, TCPA Protection")
+      to https://infutor.com/openapi.json, which is also a 200. Treated as a
+      404.
+  - url: https://infutor.com/
+    status: 200
+    finding: >-
+      Site navigation carries no pricing or plans link; the commercial calls to
+      action are /contact-us/ and product demo pages.
+  - url: https://help.infutor.com/llms.txt
+    status: 200
+    finding: >-
+      The complete 142-line help-center index contains no pricing, plans,
+      billing, quota or overage article.
+  - url: https://help.infutor.com/docs/infutor-api.md
+    status: 200
+    finding: >-
+      Feature enablement is a sales/support action, not a plan selection —
+      "Do you want to enable Authentication? Contact our team and we'll be happy
+      to help: customersupport@infutor.com".
+contact: https://infutor.com/contact-us/

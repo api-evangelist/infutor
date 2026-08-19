@@ -1,0 +1,138 @@
+generated: '2026-08-13'
+method: searched
+source: https://help.infutor.com/docs/create.md
+docs:
+  - https://help.infutor.com/docs/web-form-create-implementation.md
+  - https://help.infutor.com/docs/call-center-create-implementation.md
+  - https://help.infutor.com/docs/create-advanced-implementations.md
+  - https://help.infutor.com/docs/callback-function.md
+  - https://help.infutor.com/docs/single-page-application-spa.md
+  - https://help.infutor.com/docs/iframe-implementation.md
+  - https://help.infutor.com/docs/create-cross-domain-implementation.md
+  - https://help.infutor.com/docs/privacy-guardian-geoip.md
+  - https://help.infutor.com/docs/platform-integrations.md
+summary: >-
+  InfutorData's client-side surface is larger than its server API. The "Create"
+  product is a browser JavaScript component — the Campaign Script — that
+  witnesses a consumer's session on a lead form, mints the LeadiD token, and
+  writes it back into the page. Everything downstream (Intelligence, TCPA
+  Guardian, Privacy Guardian) depends on that token existing, so the component
+  is the real integration point for most customers. It is NOT distributed as a
+  package: each customer copies an account- and campaign-specific snippet out of
+  the Member Portal, which means there is no inspectable version and no
+  integrity pin.
+families:
+  - family: Create Campaign Script
+    kind: hosted-javascript-snippet
+    distribution: copy-paste from the Member Portal (https://app.leadid.com/)
+    versioned: false
+    docs: https://help.infutor.com/docs/web-form-create-implementation.md
+    placement: >-
+      After the closing </form> tag and immediately before </body>, on every page
+      of a multi-step funnel INCLUDING the page rendered after submission —
+      omitting the post-submit placement is the documented cause of a missing
+      proof of consent.
+    outputs:
+      - name: leadid_token
+        surface: hidden input element
+        description: The LeadiD token the audit APIs are queried with.
+      - name: LeadiD
+        surface: global JavaScript object
+        description: 'Exposes LeadiD.ip_country and LeadiD.ip_state when Privacy Guardian GeoIP is enabled.'
+    variants:
+      - name: Consumer-facing web form
+        docs: https://help.infutor.com/docs/web-form-create-implementation.md
+      - name: Call-center agent form (reset parameter)
+        docs: https://help.infutor.com/docs/call-center-create-implementation.md
+        note: >-
+          Adds a reset parameter so a single long-lived agent page mints a new
+          token per call.
+      - name: Single Page Application (SPA)
+        docs: https://help.infutor.com/docs/single-page-application-spa.md
+      - name: iFrame implementation
+        docs: https://help.infutor.com/docs/iframe-implementation.md
+      - name: Cross-domain implementation
+        docs: https://help.infutor.com/docs/create-cross-domain-implementation.md
+      - name: Callback function
+        docs: https://help.infutor.com/docs/callback-function.md
+        note: >-
+          A browser callback invoked when the token is ready; Privacy Guardian
+          adds &privacyGuardianCallback=<fn> as a script query parameter.
+  - family: TCPA Disclosure Labels
+    kind: html-markup-convention
+    distribution: hand-authored markup in the customer's own form
+    docs: https://help.infutor.com/docs/how-to-add-jornaya-tcpa-label-tags.md
+    description: >-
+      Attribute/class labels applied to the consent text and the brand name on a
+      lead form so TCPA Guardian can locate, measure and replay the disclosure
+      the consumer actually saw.
+    members:
+      - name: TCPA disclosure label
+        field: leadid_tcpa_disclosure
+        docs: https://help.infutor.com/docs/how-to-add-jornaya-tcpa-label-tags.md
+      - name: Multiple TCPA disclosures
+        docs: https://help.infutor.com/docs/multiple-tcpa-disclosures.md
+      - name: TCPA brand-name label
+        docs: https://help.infutor.com/docs/how-to-add-tcpa-brand-name-labels.md
+      - name: Brand-name logo / embedded image
+        docs: https://help.infutor.com/docs/brand-name-logo-implementation-guidelines-for-lead-forms.md
+  - family: Privacy Guardian GeoIP outputs
+    kind: browser-state
+    docs: https://help.infutor.com/docs/privacy-guardian-geoip.md
+    description: >-
+      The consumer's country and state, resolved from IP at token-creation time
+      and surfaced through four parallel channels so a form can read it however
+      it is built.
+    members:
+      - surface: JavaScript object
+        keys: [LeadiD.ip_country, LeadiD.ip_state]
+      - surface: cookies
+        keys: [jornaya_privacy_guardian_ip_country, jornaya_privacy_guardian_ip_state]
+      - surface: hidden input elements
+        keys: [jornaya_privacy_guardian_ip_country, jornaya_privacy_guardian_ip_state]
+      - surface: local storage
+        keys: [jornaya_privacy_guardian_ip_country, jornaya_privacy_guardian_ip_state]
+      - surface: callback function
+        keys: ['parameter 1 = ISO 3166 alpha-2 country', 'parameter 2 = two-letter state']
+  - family: Hosted form-builder integrations
+    kind: platform-plugin
+    docs: https://help.infutor.com/docs/platform-integrations.md
+    description: >-
+      Prebuilt paths for dropping the campaign script into common no-code form
+      and landing-page platforms, instead of editing HTML.
+    members:
+      - name: WordPress
+        docs: https://help.infutor.com/docs/wordpress.md
+      - name: Gravity Forms
+        docs: https://help.infutor.com/docs/gravity-forms.md
+      - name: Ninja Forms
+        docs: https://help.infutor.com/docs/ninja-forms.md
+      - name: FormSite
+        docs: https://help.infutor.com/docs/formsite.md
+      - name: Instapage
+        docs: https://help.infutor.com/docs/instapage.md
+      - name: Landingi
+        docs: https://help.infutor.com/docs/landingi.md
+      - name: Ensighten
+        docs: https://help.infutor.com/docs/ensighten.md
+  - family: Snowflake Native App
+    kind: hosted-data-app
+    docs: https://help.infutor.com/docs/enrichment-app-1.md
+    description: >-
+      "Snowflake App: Identity Resolution and Enrichment" — an in-warehouse
+      surface for 1st-party enrichment, distinct from both the REST APIs and the
+      browser components.
+    partner_page: https://infutor.com/partners/snowflake/
+loaders: []
+testing:
+  - name: Create Implementation Testing (self-test)
+    docs: https://help.infutor.com/docs/create-implementation-testing.md
+    description: >-
+      Verifies the campaign JavaScript is correctly implemented on a website or
+      in a call center. See sandbox/infutor-sandbox.yml.
+gaps:
+  - >-
+    No script URL, no Subresource Integrity hash and no version string is
+    published — the snippet is generated per campaign inside the Member Portal,
+    so a consumer cannot audit what code will execute on their form or pin it.
+  - No npm/CDN distribution of any component. See packages/infutor-packages.yml.

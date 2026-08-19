@@ -1,0 +1,106 @@
+generated: '2026-08-13'
+method: searched
+source: >-
+  Registry searches against registry.npmjs.org, pypi.org, rubygems.org,
+  crates.io and the GitHub org/user accounts, plus the InfutorData help center
+  SDK/implementation pages (https://help.infutor.com/llms.txt).
+summary: >-
+  InfutorData / LeadiD (part of ActiveProspect, formerly Infutor + Jornaya,
+  formerly Verisk Marketing Solutions) publishes NO first-party client SDK on
+  any public package registry. The documented integration path is a raw HTTPS
+  GET against api.leadid.com plus an account-specific "Campaign Script"
+  JavaScript snippet copied from the Member Portal (app.leadid.com) — neither is
+  distributed as a versioned package. The only packages that wrap the LeadiD
+  surface are community-published and all predate 2021.
+official_sdk_count: 0
+packages:
+  - name: preact-jornaya
+    language: javascript
+    registry: npm
+    url: https://www.npmjs.com/package/preact-jornaya
+    repo: https://github.com/dolead/preact-jornaya
+    official: false
+    version: 1.0.2
+    published: '2020-04-01'
+    description: >-
+      Community Preact component that integrates the Jornaya UniversalLeadID
+      (LeadiD) campaign script into a form. Published by Dolead, not by
+      InfutorData/ActiveProspect.
+    note: Last release 2020-04-01; over five years old.
+  - name: react-jornaya
+    language: javascript
+    registry: npm
+    url: https://www.npmjs.com/package/react-jornaya
+    repo: https://github.com/dolead/react-jornaya
+    official: false
+    version: 1.0.1
+    published: '2020-03-16'
+    description: >-
+      Community React component that integrates the Jornaya UniversalLeadID
+      (LeadiD) campaign script into a form. Published by Dolead, not by
+      InfutorData/ActiveProspect.
+    note: Last release 2020-03-16; over five years old.
+  - name: '@calistyle/infutor'
+    language: javascript
+    registry: npm
+    url: https://www.npmjs.com/package/@calistyle/infutor
+    repo: null
+    official: false
+    version: 1.0.0-alpha.3
+    published: '2018-09-20'
+    description: >-
+      Community "Node SDK for Infutor" published under the @calistyle scope.
+      Still on an alpha version tag; no link to an InfutorData-owned repository.
+    note: Last release 2018-09-20; abandoned alpha.
+registries_checked:
+  - registry: npm
+    queries: [infutor, jornaya, leadid, activeprospect]
+    first_party_hits: 0
+    note: >-
+      The @activeprospect npm scope exists (parent company) but every package in
+      it targets LeadConduit / TrustedForm — a different ActiveProspect product
+      line — not the InfutorData/LeadiD query APIs this profile covers, so none
+      are recorded here as SDKs for these APIs.
+  - registry: pypi
+    queries: [infutor, jornaya, leadid]
+    status: 404
+    first_party_hits: 0
+  - registry: rubygems
+    queries: [infutor, jornaya, leadid]
+    status: 404
+    first_party_hits: 0
+  - registry: crates.io
+    queries: [infutor, jornaya, leadid]
+    status: 403
+    first_party_hits: 0
+    note: crates.io returned 403 to the unauthenticated probe; treated as not checked rather than absent.
+source_code:
+  - host: github.com
+    account: https://github.com/Jornaya
+    type: user
+    public_repos: 0
+    note: The Jornaya GitHub account exists but publishes zero public repositories.
+  - host: github.com
+    account: https://github.com/infutor
+    status: 404
+    note: No GitHub account under the infutor name.
+  - host: github.com
+    account: https://github.com/activeprospect
+    type: organization
+    public_repos: 80
+    note: >-
+      Parent-company org. A repository search across it for jornaya/leadid/infutor
+      returns zero results — the InfutorData product line ships nothing here.
+distribution:
+  - name: LeadiD Campaign Script
+    kind: hosted-javascript-snippet
+    registry: none
+    version: null
+    published: null
+    docs: https://help.infutor.com/docs/web-form-create-implementation.md
+    note: >-
+      The primary client-side integration is an account- and campaign-specific
+      JavaScript snippet copied from the Member Portal (https://app.leadid.com/).
+      It is not distributed through a package registry or a pinned CDN URL that
+      a consumer can inspect, so there is no version or publication date to read
+      — the version is whatever the provider serves at request time.

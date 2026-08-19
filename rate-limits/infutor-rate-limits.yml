@@ -1,0 +1,59 @@
+generated: '2026-08-13'
+method: searched
+source: https://help.infutor.com/docs/authentication-api.md
+docs:
+  - https://help.infutor.com/docs/authentication-api.md
+  - https://help.infutor.com/docs/intelligence-api.md
+  - https://help.infutor.com/docs/tcpa-guardian-3rd-party-api.md
+summary: >-
+  InfutorData publishes exactly one quantified limit, and it is a per-resource
+  lookup cap rather than a request-rate ceiling: a LeadiD token may be queried
+  at most 100 times, after which the API keeps returning HTTP 200 but flags the
+  token inauthentic. No per-key or per-account request rate, burst allowance,
+  429 status, Retry-After or X-RateLimit-* / RateLimit-* response header is
+  documented anywhere in the knowledge base — an agent has no runtime signal to
+  back off on.
+limit_count: 1
+limits:
+  - id: leadid_token_query_cap
+    scope: per-resource
+    resource: LeadiD token
+    limit: 100
+    unit: queries
+    window: token lifetime (1 year from creation)
+    burst: null
+    applies_to:
+      - 'GET https://api.leadid.com/Authenticate'
+      - 'GET https://api.leadid.com/SingleQuery'
+      - 'GET https://api.leadid.com/SinglePreAudit'
+    exhaustion:
+      http_status: 200
+      signal: 'audit.authentic = 0 with audit.reason = 2'
+      message: >-
+        "Query Limit Reached – The token has been queried more than 100 times,
+        reaching the maximum number of times allowed for lookups."
+      note: >-
+        Exhaustion is reported in the response body at HTTP 200, not as a 429.
+        Any client that only inspects status codes will read an exhausted token
+        as a successful audit.
+    source: https://help.infutor.com/docs/authentication-api.md
+response_headers:
+  documented: false
+  headers: []
+  note: >-
+    No X-RateLimit-*, RateLimit-*, or Retry-After header is documented for
+    api.leadid.com or app.jornaya.com.
+status_on_exhaustion:
+  http_status: null
+  note: >-
+    No 429 is documented. The one documented exhaustion condition (token query
+    cap) is signalled inside a 200 body.
+undocumented:
+  - scope: per-key request rate
+    note: No requests-per-second/minute ceiling is published for api.leadid.com.
+  - scope: Activate API (app.jornaya.com/api/v1)
+    note: >-
+      No limits are published for the Activate instance/upload/runs endpoints.
+      An unauthenticated probe returns 401
+      {"Code":"UnauthorizedQuery","Message":"Missing Authorization Token"} with
+      no rate-limit headers on the response.

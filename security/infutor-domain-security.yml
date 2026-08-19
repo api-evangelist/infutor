@@ -1,4 +1,4 @@
-generated: '2026-07-19'
+generated: '2026-08-13'
 method: probed
 source: live DNS/TLS/HTTP probes of apis.yml + OpenAPI hosts
 hosts:
@@ -8,8 +8,26 @@ hosts:
   cert_expires: Sep 23 20:48:04 2026 GMT
   hsts: true
   hsts_max_age: 31536000
+- host: help.infutor.com
+  https: true
+  tls_version: TLSv1.3
+  cert_expires: Nov  7 20:58:26 2026 GMT
+  hsts: true
+  hsts_max_age: 31536000
+- host: api.leadid.com
+  https: true
+  tls_version: TLSv1.3
+  cert_expires: Dec  3 23:59:59 2026 GMT
+  hsts: true
+  hsts_max_age: 31536000
 domains:
 - domain: infutor.com
+  dnssec: false
+  caa: []
+  spf: true
+  dmarc: true
+  dmarc_policy: quarantine
+- domain: leadid.com
   dnssec: false
   caa: []
   spf: true

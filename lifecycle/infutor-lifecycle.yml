@@ -1,0 +1,79 @@
+generated: '2026-08-13'
+method: searched
+source: https://status.infutor.com/
+summary: >-
+  InfutorData runs a real, machine-readable Atlassian Statuspage at
+  status.infutor.com (page id lb5z152r8ktd, "InfutorData"), which is the
+  strongest operational-transparency signal the provider publishes. Versioning
+  is implicit — the help center serves an unlabelled "v1" workspace and the
+  Activate API carries /api/v1/ in its path — and there is no published
+  deprecation policy, sunset-header support, SLA or changelog. The nearest thing
+  to a change-notice commitment is a TLS-suite revision clause repeated in the
+  API articles.
+status_page: https://status.infutor.com
+status_page_platform: Atlassian Statuspage
+status_page_api:
+  - url: https://status.infutor.com/api/v2/status.json
+    status: 200
+  - url: https://status.infutor.com/api/v2/summary.json
+    status: 200
+  - url: https://status.infutor.com/history.rss
+    status: 200
+    format: RSS 2.0
+versioning:
+  scheme: uri-path
+  current: v1
+  evidence:
+    - >-
+      Help-center article links are namespaced /v1/docs/<slug> and the API
+      reference workspace is titled "v1-api".
+    - 'Activate API base path is https://app.jornaya.com/api/v1/activate.'
+    - >-
+      The LeadiD query endpoints (/Authenticate, /SingleQuery, /SinglePreAudit)
+      carry no version segment at all — a breaking change there has no
+      addressable second version.
+  docs: https://help.infutor.com/docs/technical-documentation.md
+deprecation:
+  policy_url: null
+  sunset_header: false
+  documented: false
+  partial_commitment:
+    scope: TLS protocols and cipher suites only
+    quote: >-
+      "At any future time, Jornaya may revise the list of supported TLS
+      protocols and cipher suites as required by industry security best
+      practices. You will be notified in advance of such changes to ensure
+      continued successful operations of your integrations with Jornaya's
+      services."
+    source: https://help.infutor.com/docs/authentication-api.md
+    note: >-
+      This is an advance-notice commitment about transport security, not an API
+      deprecation policy. No Deprecation pointer is emitted from it.
+sla:
+  url: null
+  uptime_target: null
+  documented: false
+changelog:
+  documented: false
+  note: >-
+    No dated changelog or release-notes series. The help center carries one
+    isolated release note (Snowflake native app, 2024-07-31) and an empty
+    "What's New" API-docs category (https://help.infutor.com/apidocs/whats-newx
+    renders with no article body).
+resource_lifecycle:
+  - resource: LeadiD token
+    ttl: 1 year
+    expiry_signal: 'audit.authentic = 0 with audit.reason = 1 (Token Expired)'
+    query_cap: 100 lookups
+    source: https://help.infutor.com/docs/authentication-api.md
+    note: >-
+      The token is the addressable resource in this API and it does have a
+      published lifecycle — one year, 100 lookups — even though the API itself
+      has none.
+deprecated_operations: []
+retired_surfaces:
+  - host: status.jornaya.com
+    status: 200
+    finding: >-
+      Returns "Jornaya Status - Page Inactive" — the legacy Jornaya status page
+      has been retired in favour of status.infutor.com but still resolves.
