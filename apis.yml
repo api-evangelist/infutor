@@ -10,6 +10,17 @@ description: >-
   APIs on api.leadid.com support authentication, lead audit, intelligence, and
   privacy-guardian lookups, documented in the InfutorData help center. Backed by
   Norwest Venture Partners.
+deliveryModel:
+  model: saas
+  open_source: false
+  commercial: true
+  callable_host: false
+  label: Hosted service · you call their endpoint
+  confidence: medium
+  source:
+  - pricing
+  generated: '2026-08-28'
+  method: derived
 accessModel:
   pricing: contact-sales
   onboarding: sales
